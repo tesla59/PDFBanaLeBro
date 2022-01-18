@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/go-ping/ping"
 	"gopkg.in/ini.v1"
 )
 
@@ -60,17 +61,34 @@ func main() {
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// Ignore all messages created by the bot itself
-	// This isn't required in this specific example but it's a good practice.
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
-	// If the message is "ping" reply with "Pong!"
-	if m.Content == "ping" {
-		s.ChannelMessageSend(m.ChannelID, "Pong!")
-	}
 
-	// If the message is "pong" reply with "Ping!"
-	if m.Content == "pong" {
-		s.ChannelMessageSend(m.ChannelID, "Ping!")
+	// '/ping' command starts here
+	if m.Content == "/ping" {
+		// Respond to the command
+		message, err := s.ChannelMessageSend(m.ChannelID, "Pinging.........")
+		
+		// Ping!!
+		pinger, err := ping.NewPinger("www.google.com")
+		if err != nil {
+			fmt.Println("URL not reachable: ", err)
+			return
+		}
+		// Blocks until finished.
+		pinger.Count = 5
+		err = pinger.Run()
+		if err != nil {
+			fmt.Println("Pinger couldn't run: ",err)
+			return
+		}
+		stats := pinger.Statistics()
+
+		if err != nil {
+			fmt.Println("Cannot send message: ", err)
+			return
+		}
+		s.ChannelMessageEdit(m.ChannelID, message.ID, "Ping: "+stats.AvgRtt.String()+"\nIP Addr: "+stats.IPAddr.String())
 	}
 }
