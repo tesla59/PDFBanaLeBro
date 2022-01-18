@@ -67,9 +67,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// '/ping' command starts here
 	if m.Content == "/ping" {
-		// Respond to the command
+		// Respond to the command (Edit later)
 		message, err := s.ChannelMessageSend(m.ChannelID, "Pinging.........")
-		
+		if err != nil {
+			fmt.Println("Cannot send message: ", err)
+			return
+		}
 		// Ping!!
 		pinger, err := ping.NewPinger("www.google.com")
 		if err != nil {
