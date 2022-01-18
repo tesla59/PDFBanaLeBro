@@ -13,7 +13,8 @@ import (
 
 // Variables used for command line parameters
 var (
-	Token string
+	Token      string
+	PreCommand string = "soja."
 )
 
 func main() {
@@ -34,7 +35,7 @@ func main() {
 	}
 
 	// Register the messageCreate func as a callback for MessageCreate events.
-	discord.AddHandler(messageCreate)
+	discord.AddHandler(pingCreate)
 
 	// In this example, we only care about receiving message events.
 	discord.Identify.Intents = discordgo.IntentsGuildMessages
@@ -58,7 +59,7 @@ func main() {
 
 // This function will be called (due to AddHandler above) every time a new
 // message is created on any channel that the authenticated bot has access to.
-func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+func pingCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// Ignore all messages created by the bot itself
 	if m.Author.ID == s.State.User.ID {
@@ -66,7 +67,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	// '/ping' command starts here
-	if m.Content == "/ping" {
+	if m.Content == PreCommand+"ping" {
 		// Respond to the command (Edit later)
 		message, err := s.ChannelMessageSend(m.ChannelID, "Pinging.........")
 		if err != nil {
@@ -83,7 +84,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		pinger.Count = 5
 		err = pinger.Run()
 		if err != nil {
-			fmt.Println("Pinger couldn't run: ",err)
+			fmt.Println("Pinger couldn't run: ", err)
 			return
 		}
 		stats := pinger.Statistics()
