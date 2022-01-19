@@ -8,6 +8,8 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/go-ping/ping"
+	"github.com/pdfcpu/pdfcpu/pkg/api"
+	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
 	"gopkg.in/ini.v1"
 )
 
@@ -15,6 +17,7 @@ import (
 var (
 	Token      string
 	PreCommand string = "soja."
+	Debug      bool
 )
 
 func main() {
@@ -37,6 +40,16 @@ func main() {
 	// Register the messageCreate func as a callback for MessageCreate events.
 	discord.AddHandler(pingCreate)
 	discord.AddHandler(start)
+
+	// Debug handler: only enable in debug mode
+	Debug, err = cfg.Section("").Key("app_mode").Bool()
+	if err != nil {
+		fmt.Println("Fail to read file,", err)
+		return
+	}
+	if Debug {
+		discord.AddHandler(debug)
+	}
 
 	// In this example, we only care about receiving message events.
 	discord.Identify.Intents = discordgo.IntentsGuildMessages
@@ -113,5 +126,30 @@ func start(s *discordgo.Session, m *discordgo.MessageCreate) {
 			Type:        "link",
 			Title:       "For more help, click here",
 		})
+	}
+}
+
+func debug(s *discordgo.Session, m *discordgo.MessageCreate) {
+
+	// Ignore all messages created by the bot itself
+	if m.Author.ID == s.State.User.ID {
+		return
+	}
+
+	//
+	if m.Content == PreCommand+"debug" {
+		imp, _ := api.Import("form:A3, pos:c, s:1.0", pdfcpu.POINTS)
+		api.ImportImagesFile([]string{"test/2.png"}, "test/out.pdf", imp, nil)
+
+		file, err := os.Open("test/out.pdf")
+		if err != nil {
+			fmt.Println("Error Reading output: ", err)
+			return
+		}
+		defer file.Close()
+
+		s.ChannelFileSendWithMessage(m.ChannelID, "Ye Le Bro", "lamma.pdf", file)
+
+		os.Remove("test/out.pdf")
 	}
 }
