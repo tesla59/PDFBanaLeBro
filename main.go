@@ -36,6 +36,7 @@ func main() {
 
 	// Register the messageCreate func as a callback for MessageCreate events.
 	discord.AddHandler(pingCreate)
+	discord.AddHandler(start)
 
 	// In this example, we only care about receiving message events.
 	discord.Identify.Intents = discordgo.IntentsGuildMessages
@@ -94,5 +95,23 @@ func pingCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			return
 		}
 		s.ChannelMessageEdit(m.ChannelID, message.ID, "Ping: "+stats.AvgRtt.String()+"\nIP Addr: "+stats.IPAddr.String())
+	}
+}
+
+func start(s *discordgo.Session, m *discordgo.MessageCreate) {
+
+	// Ignore all messages created by the bot itself
+	if m.Author.ID == s.State.User.ID {
+		return
+	}
+
+	if m.Content == PreCommand+"help" {
+		startMessage := "Hey there. I'm a PDF utility bot written in Golang by @tesla59.\nI'm still in my initial phase so don't expect much."
+		s.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
+			Description: startMessage,
+			URL:         "http://nishantns.xyz/help",
+			Type:        "link",
+			Title:       "For more help, click here",
+		})
 	}
 }
