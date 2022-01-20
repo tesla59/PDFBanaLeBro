@@ -6,18 +6,16 @@ import (
 	"os/signal"
 	"syscall"
 
+	"PDFBanaLeBro/modules"
+
 	"github.com/bwmarrin/discordgo"
-	"github.com/go-ping/ping"
-	"github.com/pdfcpu/pdfcpu/pkg/api"
-	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu"
 	"gopkg.in/ini.v1"
 )
 
 // Variables used for command line parameters
 var (
-	Token      string
-	PreCommand string = "soja."
-	Debug      bool
+	Token string
+	Debug bool
 )
 
 func main() {
@@ -38,8 +36,8 @@ func main() {
 	}
 
 	// Register the messageCreate func as a callback for MessageCreate events.
-	discord.AddHandler(pingCreate)
-	discord.AddHandler(start)
+	discord.AddHandler(modules.PingCreate)
+	discord.AddHandler(modules.Start)
 
 	// Debug handler: only enable in debug mode
 	Debug, err = cfg.Section("").Key("app_mode").Bool()
@@ -48,7 +46,7 @@ func main() {
 		Debug = false // Set Debug to false if not defined
 	}
 	if Debug {
-		discord.AddHandler(debug)
+		discord.AddHandler(modules.Debug)
 	}
 
 	// In this example, we only care about receiving message events.
@@ -70,83 +68,4 @@ func main() {
 
 	// Cleanly close down the Discord session.
 	discord.Close()
-}
-
-// This function will be called (due to AddHandler above) every time a new
-// message is created on any channel that the authenticated bot has access to.
-func pingCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-
-	// Ignore all messages created by the bot itself
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-
-	// '/ping' command starts here
-	if m.Content == PreCommand+"ping" {
-		// Respond to the command (Edit later)
-		message, err := s.ChannelMessageSend(m.ChannelID, "Pinging.........")
-		if err != nil {
-			fmt.Println("Error sending message,", err)
-			return
-		}
-		// Ping!!
-		pinger, err := ping.NewPinger("www.google.com")
-		if err != nil {
-			fmt.Println("URL not reachable,", err)
-			return
-		}
-		// Blocks until finished.
-		pinger.Count = 5
-		err = pinger.Run()
-		if err != nil {
-			fmt.Println("Error running Pinger,", err)
-			return
-		}
-		stats := pinger.Statistics()
-
-		s.ChannelMessageEdit(m.ChannelID, message.ID, "Ping: "+stats.AvgRtt.String()+"\nIP Addr: "+stats.IPAddr.String())
-	}
-}
-
-func start(s *discordgo.Session, m *discordgo.MessageCreate) {
-
-	// Ignore all messages created by the bot itself
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-
-	if m.Content == PreCommand+"help" {
-		startMessage := "Hey there. I'm a PDF utility bot written in Golang by @tesla59.\nI'm still in my initial phase so don't expect much."
-		s.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
-			Description: startMessage,
-			URL:         "http://nishantns.xyz/help",
-			Type:        "link",
-			Title:       "For more help, click here",
-		})
-	}
-}
-
-func debug(s *discordgo.Session, m *discordgo.MessageCreate) {
-
-	// Ignore all messages created by the bot itself
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-
-	//
-	if m.Content == PreCommand+"debug" {
-		imp, _ := api.Import("form:A3, pos:c, s:1.0", pdfcpu.POINTS)
-		api.ImportImagesFile([]string{"test/2.png"}, "test/out.pdf", imp, nil)
-
-		file, err := os.Open("test/out.pdf")
-		if err != nil {
-			fmt.Println("Error Reading output: ", err)
-			return
-		}
-		defer file.Close()
-
-		s.ChannelFileSendWithMessage(m.ChannelID, "Ye Le Bro", "lamma.pdf", file)
-
-		os.Remove("test/out.pdf")
-	}
 }
