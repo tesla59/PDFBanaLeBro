@@ -1,7 +1,7 @@
 package modules
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/go-ping/ping"
@@ -19,20 +19,20 @@ func PingCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		// Respond to the command (Edit later)
 		message, err := s.ChannelMessageSend(m.ChannelID, "Pinging.........")
 		if err != nil {
-			fmt.Println("Error sending message,", err)
+			log.Println("Error sending message,", err)
 			return
 		}
 		// Ping!!
 		pinger, err := ping.NewPinger("www.google.com")
 		if err != nil {
-			fmt.Println("URL not reachable,", err)
+			log.Println("URL not reachable,", err)
 			return
 		}
 		// Blocks until finished.
 		pinger.Count = 5
 		err = pinger.Run()
 		if err != nil {
-			fmt.Println("Error running Pinger,", err)
+			log.Println("Error running Pinger,", err)
 			return
 		}
 		stats := pinger.Statistics()

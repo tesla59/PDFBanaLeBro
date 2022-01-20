@@ -1,7 +1,7 @@
 package modules
 
 import (
-	"fmt"
+	"log"
 	"os"
 
 	"github.com/bwmarrin/discordgo"
@@ -23,7 +23,7 @@ func Debug(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		file, err := os.Open("test/out.pdf")
 		if err != nil {
-			fmt.Println("Error Reading output: ", err)
+			log.Println("Error Reading output: ", err)
 			return
 		}
 		defer file.Close()
