@@ -25,7 +25,7 @@ func main() {
 	// Loading config.ini
 	cfg, err := ini.Load("config.ini")
 	if err != nil {
-		fmt.Println("Fail to read file,", err)
+		fmt.Println("Failed to read config.ini,", err)
 		return
 	}
 	Token = cfg.Section("").Key("botToken").String()
@@ -33,7 +33,7 @@ func main() {
 	// Creating a new Discord session
 	discord, err := discordgo.New("Bot " + Token)
 	if err != nil {
-		fmt.Println("error creating Discord session,", err)
+		fmt.Println("Error creating discord session,", err)
 		return
 	}
 
@@ -44,8 +44,8 @@ func main() {
 	// Debug handler: only enable in debug mode
 	Debug, err = cfg.Section("").Key("app_mode").Bool()
 	if err != nil {
-		fmt.Println("Fail to read file,", err)
-		return
+		fmt.Println("Error: app_mode not defined in config.ini,", err)
+		Debug = false // Set Debug to false if not defined
 	}
 	if Debug {
 		discord.AddHandler(debug)
@@ -57,12 +57,13 @@ func main() {
 	// Open a websocket connection to Discord and begin listening.
 	err = discord.Open()
 	if err != nil {
-		fmt.Println("error opening connection,", err)
+		fmt.Println("Error opening connection,", err)
 		return
 	}
 
 	// Wait here until CTRL-C or other term signal is received.
-	fmt.Println("Bot is now running.  Press CTRL-C to exit.")
+	fmt.Println("Bot is now running on", discord.State.User.Username)
+	fmt.Println("Press CTRL-C to exit")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, syscall.SIGTERM)
 	<-sc
@@ -85,28 +86,24 @@ func pingCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		// Respond to the command (Edit later)
 		message, err := s.ChannelMessageSend(m.ChannelID, "Pinging.........")
 		if err != nil {
-			fmt.Println("Cannot send message: ", err)
+			fmt.Println("Error sending message,", err)
 			return
 		}
 		// Ping!!
 		pinger, err := ping.NewPinger("www.google.com")
 		if err != nil {
-			fmt.Println("URL not reachable: ", err)
+			fmt.Println("URL not reachable,", err)
 			return
 		}
 		// Blocks until finished.
 		pinger.Count = 5
 		err = pinger.Run()
 		if err != nil {
-			fmt.Println("Pinger couldn't run: ", err)
+			fmt.Println("Error running Pinger,", err)
 			return
 		}
 		stats := pinger.Statistics()
 
-		if err != nil {
-			fmt.Println("Cannot send message: ", err)
-			return
-		}
 		s.ChannelMessageEdit(m.ChannelID, message.ID, "Ping: "+stats.AvgRtt.String()+"\nIP Addr: "+stats.IPAddr.String())
 	}
 }
