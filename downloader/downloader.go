@@ -4,7 +4,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	// "path"
 )
 
 func DownloadFile(url string, filePath string) error {
@@ -13,8 +12,6 @@ func DownloadFile(url string, filePath string) error {
 		return err
 	}
 	defer resp.Body.Close()
-
-	// fileName := path.Base(resp.Request.URL.String())
 
 	out, err := os.Create(filePath)
 	if err != nil {

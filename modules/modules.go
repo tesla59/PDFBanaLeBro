@@ -8,6 +8,7 @@ import (
 
 var PreCommand string = "soja."
 
+// Used in pdf.go
 func isImage(filePath string) bool {
 	file, err := os.Open(filePath)
 	if err != nil {

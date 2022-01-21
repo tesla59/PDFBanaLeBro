@@ -33,13 +33,15 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// Start command
 	if m.Content == PreCommand+"start" {
-		result := db.Where(&Session{UserID: m.Author.ID}).First(&session)
-		if result.Error != nil {
+
+		// Fetch user's data from DB
+		err := db.Where(&Session{UserID: m.Author.ID}).First(&session)
+		if err.Error != nil {
 			// Add entry if user doesn't exist
 			db.Create(&Session{
-				UserID:       m.Author.ID,
-				RState:       false,
-				CurrentJPEGs: 0,
+				UserID:        m.Author.ID,
+				RState:        false,
+				CurrentImages: 0,
 			})
 			db.Where(&Session{UserID: m.Author.ID}).First(&session)
 		}
@@ -60,9 +62,10 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Fetch images command
 	if m.Content == PreCommand+"f" {
 
-		result := db.Where(&Session{UserID: m.Author.ID}).First(&session)
+		// Fetch user's data from DB
+		err := db.Where(&Session{UserID: m.Author.ID}).First(&session)
 
-		if result.Error != nil {
+		if err.Error != nil {
 			// User not in DB
 			s.ChannelMessageSend(m.ChannelID, "I dont even know who u are\nSend soja.start to send me your bank details")
 		} else {
@@ -71,7 +74,7 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 				// User in DB + RState True
 				if len(m.Attachments) != 0 {
 					// soja.f with attachment
-					filePath := session.UserID + "/" + session.UserID + "_" + fmt.Sprint(session.CurrentJPEGs) + ".jpeg"
+					filePath := session.UserID + "/" + session.UserID + "_" + fmt.Sprint(session.CurrentImages) + ".jpeg"
 					err := dload.DownloadFile(m.Attachments[0].ProxyURL, filePath)
 					if err != nil {
 						log.Println("Error downloading file: ", err)
@@ -80,7 +83,7 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 					if isImage(filePath) {
 						// File is Image
 						s.ChannelMessageSend(m.ChannelID, "Hippity Hoppty your images are now my property")
-						session.CurrentJPEGs++
+						session.CurrentImages++
 						db.Save(&session)
 					} else {
 						// Unsupported filetype
@@ -99,34 +102,36 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// End command
 	if m.Content == PreCommand+"end" {
-		result := db.Where(&Session{UserID: m.Author.ID}).First(&session)
 
-		if result.Error != nil {
+		// Fetch user's data from DB
+		err := db.Where(&Session{UserID: m.Author.ID}).First(&session)
+
+		if err.Error != nil {
 			// User doesn't exist/New User
 			s.ChannelMessageSend(m.ChannelID, "I dont even know who u are\nSend soja.start to send me your bank details")
 		} else if session.RState {
 			// User exist + Has an active session
-			if session.CurrentJPEGs != 0 {
+			if session.CurrentImages != 0 {
 				// Has at least 1 image to convert
 
-				// Reding all images in userID/*.png(jpeg)
-				var inputJPEGs []string
-				for i := 0; i < session.CurrentJPEGs; i++ {
-					inputJPEGs = append(inputJPEGs, session.UserID+"/"+session.UserID+"_"+fmt.Sprint(i)+".jpeg")
+				// Reading all images in userID/*.png(jpeg)
+				var inputImages []string
+				for i := 0; i < session.CurrentImages; i++ {
+					inputImages = append(inputImages, session.UserID+"/"+session.UserID+"_"+fmt.Sprint(i)+".jpeg")
 				}
 
 				// Set metadata for PDFs
 				imp, _ := api.Import("form:A3, pos:c, s:1.0", pdfcpu.POINTS)
 				filePDF := session.UserID + "/" + m.Author.Username + ".pdf"
 
-				// Converting all images in userID/ to userID/userName.pdf
-				err = api.ImportImagesFile(inputJPEGs, filePDF, imp, nil)
+				// Converting all images in userID/* to userID/userName.pdf
+				err := api.ImportImagesFile(inputImages, filePDF, imp, nil)
 				if err != nil {
 					log.Println("Error Creating output PDF: ", err)
 					return
 				}
 
-				// create *FILE for output.pdf
+				// Create *FILE for output.pdf
 				file, err := os.Open(filePDF)
 				if err != nil {
 					log.Println("Error Reading output PDF: ", err)
@@ -146,10 +151,10 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 				// Reset all DB entries except userID
 				session.RState = false
-				session.CurrentJPEGs = 0
+				session.CurrentImages = 0
 				db.Save(&session)
 			} else {
-				//User exist + Active session + 0 images sent
+				// User exist + Active session + 0 images sent
 				s.ChannelMessageSend(m.ChannelID, "Error: no images found\nSend some images first")
 			}
 		} else {
