@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	// "strings"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/pdfcpu/pdfcpu/pkg/api"
@@ -59,10 +58,16 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Take in all the pictures
 	if m.Content == PreCommand+"f" {
 		result := db.Where(&Session{UserID: m.Author.ID}).First(&session)
+		// User not in DB
+		// User in DB, RState True
+		// User in DB, RState False
+		// User in DB, RState True, soja.f with pik
+		// User in DB, RState True, soja.f without pik
+		// User in DB, RState False, soja.f with pik
+		// User in DB, RState False, soja.f without pik
 		if result.Error != nil {
-			s.ChannelMessageSend(m.ChannelID, "Niggah, I dont even know who u are\nSend soja.start to send me your bank details")
-		} else {
-			// for i := 0 + session.CurrentJPEGs; i < len(m.Attachments)+ session.CurrentJPEGs; i++ {
+			s.ChannelMessageSend(m.ChannelID, "I dont even know who u are\nSend soja.start to send me your bank details")
+		} else if len(m.Attachments) != 0 {
 			filePath := session.UserID + "/" + session.UserID + "_" + fmt.Sprint(session.CurrentJPEGs) + ".jpeg" // fmt.Sprint(i) + ".jpeg"
 			err := dload.DownloadFile(m.Attachments[0].ProxyURL, filePath)
 			if err != nil {
@@ -72,15 +77,18 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 			s.ChannelMessageSend(m.ChannelID, "Hippity Hoppty your nudes are now my property")
 			session.CurrentJPEGs++
 			db.Save(&session)
-			// }
+		} else if !session.RState {
+			s.ChannelMessageSend(m.ChannelID, "Error: I can't convert this to PDF")
+		} else {
+			s.ChannelMessageSend(m.ChannelID, "You dont have an active session\nSend soja.start to enable a session")
 		}
 	}
 
 	if m.Content == PreCommand+"end" {
 		result := db.Where(&Session{UserID: m.Author.ID}).First(&session)
 		if result.Error != nil {
-			s.ChannelMessageSend(m.ChannelID, "Niggah, I dont even know who u are\nSend soja.start to send me your bank details")
-		} else {
+			s.ChannelMessageSend(m.ChannelID, "I dont even know who u are\nSend soja.start to send me your bank details")
+		} else if session.RState {
 			var inputJPEGs []string
 			for i := 0; i < session.CurrentJPEGs; i++ {
 				inputJPEGs = append(inputJPEGs, session.UserID+"/"+session.UserID+"_"+fmt.Sprint(i)+".jpeg")
@@ -109,46 +117,11 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 			}
 
 			session.RState = false
-			session.CurrentJPEGs=0
+			session.CurrentJPEGs = 0
 			db.Save(&session)
+		} else {
+			s.ChannelMessageSend(m.ChannelID, "I dont even know who you are\nSend soja.start to send your bank details")
 		}
 	}
 
 }
-
-// func isPic(name string) bool {
-// 	length := len(name)
-// 	arr := strings.Split(name, "")
-// 	ext := arr[length-4] + arr[length-3] + arr[length-2] + arr[length-1]
-// 	if ext == ".png" || ext == "jpeg" || ext == ".jpg" {
-// 		return true
-// 	} else {
-// 		return false
-// 	}
-// }
-
-// // if m.Author.ID == session.UserID
-// result := db.Where(&Session{UserID: m.Author.ID}).First(&session)
-// if result.Error != nil {
-// 	s.ChannelMessageSend(m.ChannelID, "I don't think I know you")
-// 	return
-// }
-// var inputJPEGs []string
-// for i := 0; i < session.CurrentJPEGs; i++ {
-// 	inputJPEGs = append(inputJPEGs, session.UserID + fmt.Sprint(i) + ".jpeg")
-// }
-
-// imp, _ := api.Import("form:A3, pos:c, s:1.0", pdfcpu.POINTS)
-// filePDF := session.UserID + "/" + session.UserID + ".pdf"
-// api.ImportImagesFile(inputJPEGs, filePDF, imp, nil)
-
-// file, err := os.Open(filePDF)
-// if err != nil {
-// 	log.Println("Error Reading output PDF: ", err)
-// 	return
-// }
-// defer file.Close()
-
-// s.ChannelFileSendWithMessage(m.ChannelID, "Ye Le Bro", "lamma.pdf", file)
-
-// os.Remove("test/out.pdf")
