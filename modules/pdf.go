@@ -46,12 +46,12 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		if !session.RState { 
 			// Initiate a session
-			s.ChannelMessageSend(m.ChannelID, "Never Gonna Give u up\nNever gonna let u down\nAlright You may send nudes now")
+			s.ChannelMessageSend(m.ChannelID, "Never Gonna Give u up\nNever gonna let u down\nAlright You may send images now")
 			session.RState = true
 			db.Save(&session)
 		} else { 
 			// Already active session
-			s.ChannelMessageSend(m.ChannelID, "Hold up, you already have an active session\nSend Pictures instead")
+			s.ChannelMessageSend(m.ChannelID, "Hold up, you already have an active session\nSend images instead")
 		}
 		// Store all temp files in usersID/userID_i.png
 		os.Mkdir(session.UserID, 0777)
@@ -79,7 +79,7 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 					}
 					if isImage(filePath) { 
 						// File is Image
-						s.ChannelMessageSend(m.ChannelID, "Hippity Hoppty your nudes are now my property")
+						s.ChannelMessageSend(m.ChannelID, "Hippity Hoppty your images are now my property")
 						session.CurrentJPEGs++
 						db.Save(&session)
 					} else { 
