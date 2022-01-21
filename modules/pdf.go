@@ -88,6 +88,7 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 					} else {
 						// Unsupported filetype
 						s.ChannelMessageSend(m.ChannelID, "Error: This file format is not supported")
+						os.Remove(filePath)
 					}
 				} else {
 					// soja.f without attachment
