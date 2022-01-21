@@ -33,6 +33,7 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// Start command
 	if m.Content == PreCommand+"start" {
+
 		// Fetch user's data from DB
 		err := db.Where(&Session{UserID: m.Author.ID}).First(&session)
 		if err.Error != nil {
@@ -60,6 +61,7 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// Fetch images command
 	if m.Content == PreCommand+"f" {
+
 		// Fetch user's data from DB
 		err := db.Where(&Session{UserID: m.Author.ID}).First(&session)
 
@@ -100,6 +102,7 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// End command
 	if m.Content == PreCommand+"end" {
+
 		// Fetch user's data from DB
 		err := db.Where(&Session{UserID: m.Author.ID}).First(&session)
 
@@ -108,46 +111,52 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 			s.ChannelMessageSend(m.ChannelID, "I dont even know who u are\nSend soja.start to send me your bank details")
 		} else if session.RState {
 			// User exist + Has an active session
+			if session.CurrentImages != 0 {
+				// Has at least 1 image to convert
 
-			// Reading all images in userID/*.png(jpeg)
-			var inputJPEGs []string
-			for i := 0; i < session.CurrentImages; i++ {
-				inputJPEGs = append(inputJPEGs, session.UserID+"/"+session.UserID+"_"+fmt.Sprint(i)+".jpeg")
+				// Reading all images in userID/*.png(jpeg)
+				var inputImages []string
+				for i := 0; i < session.CurrentImages; i++ {
+					inputImages = append(inputImages, session.UserID+"/"+session.UserID+"_"+fmt.Sprint(i)+".jpeg")
+				}
+
+				// Set metadata for PDFs
+				imp, _ := api.Import("form:A3, pos:c, s:1.0", pdfcpu.POINTS)
+				filePDF := session.UserID + "/" + m.Author.Username + ".pdf"
+
+				// Converting all images in userID/* to userID/userName.pdf
+				err := api.ImportImagesFile(inputImages, filePDF, imp, nil)
+				if err != nil {
+					log.Println("Error Creating output PDF: ", err)
+					return
+				}
+
+				// Create *FILE for output.pdf
+				file, err := os.Open(filePDF)
+				if err != nil {
+					log.Println("Error Reading output PDF: ", err)
+					return
+				}
+				defer file.Close()
+
+				// Send the final PDF
+				s.ChannelFileSendWithMessage(m.ChannelID, "Ye Le Bro", m.Author.Username+".pdf", file)
+
+				// Clean all temp directories
+				err = os.RemoveAll(session.UserID)
+				if err != nil {
+					log.Println("Error Removing temp directory: ", err)
+					return
+				}
+
+				// Reset all DB entries except userID
+				session.RState = false
+				session.CurrentImages = 0
+				db.Save(&session)
+			} else {
+				// User exist + Active session + 0 images sent
+				s.ChannelMessageSend(m.ChannelID, "Error: no images found\nSend some images first")
 			}
-
-			// Set metadata for PDFs
-			imp, _ := api.Import("form:A3, pos:c, s:1.0", pdfcpu.POINTS)
-			filePDF := session.UserID + "/" + m.Author.Username + ".pdf"
-
-			// Converting all images in userID/* to userID/userName.pdf
-			err := api.ImportImagesFile(inputJPEGs, filePDF, imp, nil)
-			if err != nil {
-				log.Println("Error Creating output PDF: ", err)
-				return
-			}
-
-			// Create *FILE for output.pdf
-			file, err := os.Open(filePDF)
-			if err != nil {
-				log.Println("Error Reading output PDF: ", err)
-				return
-			}
-			defer file.Close()
-
-			// Send the final PDF
-			s.ChannelFileSendWithMessage(m.ChannelID, "Ye Le Bro", m.Author.Username+".pdf", file)
-
-			// Clean all temp directories
-			err = os.RemoveAll(session.UserID)
-			if err != nil {
-				log.Println("Error Removing temp directory: ", err)
-				return
-			}
-
-			// Reset all DB entries except userID
-			session.RState = false
-			session.CurrentImages = 0
-			db.Save(&session)
 		} else {
 			// User exist + inactive session
 			s.ChannelMessageSend(m.ChannelID, "You don't have any active session\nSend soja.start to initiate a session")
