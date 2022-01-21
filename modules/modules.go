@@ -21,7 +21,7 @@ func isImage(filePath string) bool {
 	}
 
 	fileType := http.DetectContentType(buf)
-	if fileType == "image/png" || fileType == "image/jpeg" {
+	if fileType == "image/png" || fileType == "image/jpeg" || fileType == "image/webp" {
 		return true
 	} else {
 		return false
