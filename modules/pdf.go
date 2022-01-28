@@ -2,7 +2,6 @@ package modules
 
 import (
 	dload "PDFBanaLeBro/downloader"
-	"fmt"
 	"log"
 	"os"
 
@@ -61,7 +60,6 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// Fetch images command
 	if m.Content == PreCommand+"f" {
-
 		// Fetch user's data from DB
 		err := db.Where(&Session{UserID: m.Author.ID}).First(&session)
 
@@ -72,27 +70,41 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 			// User in DB
 			if session.RState {
 				// User in DB + RState True
-				if len(m.Attachments) != 0 {
-					// soja.f with attachment
-					filePath := session.UserID + "/" + session.UserID + "_" + fmt.Sprint(session.CurrentImages) + ".jpeg"
-					err := dload.DownloadFile(m.Attachments[0].ProxyURL, filePath)
-					if err != nil {
-						log.Println("Error downloading file: ", err)
-						return
-					}
-					if isImage(filePath) {
-						// File is Image
-						s.ChannelMessageSend(m.ChannelID, "Hippity Hoppty your images are now my property")
-						session.CurrentImages++
-						db.Save(&session)
-					} else {
-						// Unsupported filetype
-						s.ChannelMessageSend(m.ChannelID, "Error: This file format is not supported")
-						os.Remove(filePath)
-					}
-				} else {
-					// soja.f without attachment
+				if len(m.Attachments) == 0 {
+					// soja.f without attachments
 					s.ChannelMessageSend(m.ChannelID, "Error: no file sent")
+				} else {
+					// soja.f with attachment
+					for i := range m.Attachments {
+						filePath := session.UserID + "/" + "temp.jpeg"
+						err := dload.DownloadFile(m.Attachments[i].ProxyURL, filePath)
+						if err != nil {
+							log.Println("Error downloading file: ", err)
+							return
+						}
+						if isImage(filePath) {
+							// File is Image
+							if i == 0 {
+								// Only send this once
+								s.ChannelMessageSend(m.ChannelID, "Hippity Hoppty your images are now my property")
+							}
+							// Creating a new PDF/Appending to existing one
+							imp, _ := api.Import("form:A3, pos:c, s:1.0", pdfcpu.POINTS)
+							filePDF := session.UserID + "/" + m.Author.Username + ".pdf"
+							err := api.ImportImagesFile([]string{filePath}, filePDF, imp, nil)
+							if err != nil {
+								log.Println("Error Creating output PDF: ", err)
+								return
+							}
+							os.Remove(filePath)
+							session.CurrentImages++
+							db.Save(&session)
+						} else {
+							// Unsupported filetype
+							s.ChannelMessageSend(m.ChannelID, "Error: This file format is not supported")
+							os.Remove(filePath)
+						}
+					}
 				}
 			} else {
 				// User in DB + RState False
@@ -103,7 +115,6 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// End command
 	if m.Content == PreCommand+"end" {
-
 		// Fetch user's data from DB
 		err := db.Where(&Session{UserID: m.Author.ID}).First(&session)
 
@@ -114,23 +125,7 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 			// User exist + Has an active session
 			if session.CurrentImages != 0 {
 				// Has at least 1 image to convert
-
-				// Reading all images in userID/*.png(jpeg)
-				var inputImages []string
-				for i := 0; i < session.CurrentImages; i++ {
-					inputImages = append(inputImages, session.UserID+"/"+session.UserID+"_"+fmt.Sprint(i)+".jpeg")
-				}
-
-				// Set metadata for PDFs
-				imp, _ := api.Import("form:A3, pos:c, s:1.0", pdfcpu.POINTS)
 				filePDF := session.UserID + "/" + m.Author.Username + ".pdf"
-
-				// Converting all images in userID/* to userID/userName.pdf
-				err := api.ImportImagesFile(inputImages, filePDF, imp, nil)
-				if err != nil {
-					log.Println("Error Creating output PDF: ", err)
-					return
-				}
 
 				// Create *FILE for output.pdf
 				file, err := os.Open(filePDF)
