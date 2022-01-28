@@ -13,7 +13,6 @@ import (
 )
 
 func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
-
 	// Ignore all messages created by the bot itself
 	if m.Author.ID == s.State.User.ID {
 		return
@@ -151,7 +150,9 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 				db.Save(&session)
 			} else {
 				// User exist + Active session + 0 images sent
-				s.ChannelMessageSend(m.ChannelID, "Error: no images found\nSend some images first")
+				session.RState = false
+				s.ChannelMessageSend(m.ChannelID, "Okay your session has been ended\nSend soja.start to initiate a new session again")
+				db.Save(&session)
 			}
 		} else {
 			// User exist + inactive session
