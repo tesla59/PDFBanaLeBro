@@ -24,7 +24,7 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// Opening DB
 	db, err := gorm.Open(sqlite.Open("session.db"), &gorm.Config{})
 	if err != nil {
-		log.Println()
+		log.Println("Failed to Open session.db: ", err)
 	}
 
 	// Create Schema
