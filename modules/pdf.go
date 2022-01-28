@@ -25,6 +25,13 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if err != nil {
 		log.Println("Failed to Open session.db: ", err)
 	}
+	defer func() {
+		sqlDB, err := db.DB()
+		if err != nil {
+			log.Println("Failed to generate sqlDB: ", err)
+		}
+		sqlDB.Close()
+	}()
 
 	// Create Schema
 	db.AutoMigrate(&Session{})
