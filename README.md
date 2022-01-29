@@ -13,22 +13,18 @@ The Bot currently has following commands.
 1. soja.ping - Sends ping result
 2. soja.start - Initiates a session
 3. soja.f - Should be added as caption to every image you want as PDF
-4. soja.end - Ends the active session and sends PDF to target chat (Doesn't work no images has been sent or without any active session)
+4. soja.end - Ends the active session and sends PDF to target chat
 5. soja.debug - placeholder command for testing purpose (disabled when app_mode is set to false in config.ini)
 
 Although usable, the bot lacks some features as of now. Below are the planned features (Todo list)
 1. Support for encrypted PDFs
 2. Extract images from a PDF and send them as a zip
-3. A new soja.help command to explain command usage
-4. Support for multiple images in one message (The bot was designed for circumstances when you will only send one image at a time so not implemented by default)
-5. Improve image fetching mechanism (At present, bot awaits soja.end command to convert every images to PDF. A better mechanism is to append images to existing PDF)
-6. soja.end doesn't work when images sent are zero. So introduce a command to end session forcefully
 
-So, How should you use the bot?
+## So, How should you use the bot?
 - Simple add the bot to your server using the button provided above
 - Start a session using ```soja.start```
-- Send all your images one by one each with caption ```soja.f```
+- Send all your images with caption ```soja.f```
 - Send ```soja.end``` to end the session and receive the final PDF
-- And your'e done
+- And you're done
 
 Pull requests are welcomed (unless you're a spam bot)
