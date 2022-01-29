@@ -2,7 +2,6 @@ package modules
 
 import (
 	dload "PDFBanaLeBro/downloader"
-	"fmt"
 	"log"
 	"os"
 
@@ -14,7 +13,6 @@ import (
 )
 
 func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
-
 	// Ignore all messages created by the bot itself
 	if m.Author.ID == s.State.User.ID {
 		return
@@ -23,10 +21,17 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 	var session Session
 
 	// Opening DB
-	db, err := gorm.Open(sqlite.Open("session.db"), &gorm.Config{})
-	if err != nil {
-		log.Println()
+	db, Err := gorm.Open(sqlite.Open("session.db"), &gorm.Config{})
+	if Err != nil {
+		log.Println("Failed to Open session.db: ", Err)
 	}
+	defer func() {
+		sqlDB, Err := db.DB()
+		if Err != nil {
+			log.Println("Failed to generate sqlDB: ", Err)
+		}
+		sqlDB.Close()
+	}()
 
 	// Create Schema
 	db.AutoMigrate(&Session{})
@@ -35,8 +40,7 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Content == PreCommand+"start" {
 
 		// Fetch user's data from DB
-		err := db.Where(&Session{UserID: m.Author.ID}).First(&session)
-		if err.Error != nil {
+		if (db.Where(&Session{UserID: m.Author.ID}).First(&session)).Error != nil {
 			// Add entry if user doesn't exist
 			db.Create(&Session{
 				UserID:        m.Author.ID,
@@ -61,38 +65,48 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// Fetch images command
 	if m.Content == PreCommand+"f" {
-
 		// Fetch user's data from DB
-		err := db.Where(&Session{UserID: m.Author.ID}).First(&session)
-
-		if err.Error != nil {
+		if (db.Where(&Session{UserID: m.Author.ID}).First(&session)).Error != nil {
 			// User not in DB
 			s.ChannelMessageSend(m.ChannelID, "I dont even know who u are\nSend soja.start to send me your bank details")
 		} else {
 			// User in DB
 			if session.RState {
 				// User in DB + RState True
-				if len(m.Attachments) != 0 {
-					// soja.f with attachment
-					filePath := session.UserID + "/" + session.UserID + "_" + fmt.Sprint(session.CurrentImages) + ".jpeg"
-					err := dload.DownloadFile(m.Attachments[0].ProxyURL, filePath)
-					if err != nil {
-						log.Println("Error downloading file: ", err)
-						return
-					}
-					if isImage(filePath) {
-						// File is Image
-						s.ChannelMessageSend(m.ChannelID, "Hippity Hoppty your images are now my property")
-						session.CurrentImages++
-						db.Save(&session)
-					} else {
-						// Unsupported filetype
-						s.ChannelMessageSend(m.ChannelID, "Error: This file format is not supported")
-						os.Remove(filePath)
-					}
-				} else {
-					// soja.f without attachment
+				if len(m.Attachments) == 0 {
+					// soja.f without attachments
 					s.ChannelMessageSend(m.ChannelID, "Error: no file sent")
+				} else {
+					// soja.f with attachment
+					for i := range m.Attachments {
+						filePath := session.UserID + "/" + "temp.jpeg"
+						if Err = dload.DownloadFile(m.Attachments[i].ProxyURL, filePath); Err != nil {
+							log.Println("Error downloading file: ", Err)
+							return
+						}
+						if isImage(filePath) {
+							// File is Image
+							if i == 0 {
+								// Only send this once
+								s.ChannelMessageSend(m.ChannelID, "Hippity Hoppty your images are now my property")
+							}
+							// Creating a new PDF/Appending to existing one
+							imp, _ := api.Import("form:A3, pos:c, s:1.0", pdfcpu.POINTS)
+							filePDF := session.UserID + "/" + m.Author.Username + ".pdf"
+							Err = api.ImportImagesFile([]string{filePath}, filePDF, imp, nil)
+							if Err != nil {
+								log.Println("Error Creating output PDF: ", Err)
+								return
+							}
+							os.Remove(filePath)
+							session.CurrentImages++
+							db.Save(&session)
+						} else {
+							// Unsupported filetype
+							s.ChannelMessageSend(m.ChannelID, "Error: This file format is not supported")
+							os.Remove(filePath)
+						}
+					}
 				}
 			} else {
 				// User in DB + RState False
@@ -103,39 +117,20 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// End command
 	if m.Content == PreCommand+"end" {
-
 		// Fetch user's data from DB
-		err := db.Where(&Session{UserID: m.Author.ID}).First(&session)
-
-		if err.Error != nil {
+		if (db.Where(&Session{UserID: m.Author.ID}).First(&session)).Error != nil {
 			// User doesn't exist/New User
 			s.ChannelMessageSend(m.ChannelID, "I dont even know who u are\nSend soja.start to send me your bank details")
 		} else if session.RState {
 			// User exist + Has an active session
 			if session.CurrentImages != 0 {
 				// Has at least 1 image to convert
-
-				// Reading all images in userID/*.png(jpeg)
-				var inputImages []string
-				for i := 0; i < session.CurrentImages; i++ {
-					inputImages = append(inputImages, session.UserID+"/"+session.UserID+"_"+fmt.Sprint(i)+".jpeg")
-				}
-
-				// Set metadata for PDFs
-				imp, _ := api.Import("form:A3, pos:c, s:1.0", pdfcpu.POINTS)
 				filePDF := session.UserID + "/" + m.Author.Username + ".pdf"
 
-				// Converting all images in userID/* to userID/userName.pdf
-				err := api.ImportImagesFile(inputImages, filePDF, imp, nil)
-				if err != nil {
-					log.Println("Error Creating output PDF: ", err)
-					return
-				}
-
 				// Create *FILE for output.pdf
-				file, err := os.Open(filePDF)
-				if err != nil {
-					log.Println("Error Reading output PDF: ", err)
+				file, Err := os.Open(filePDF)
+				if Err != nil {
+					log.Println("Error Reading output PDF: ", Err)
 					return
 				}
 				defer file.Close()
@@ -144,9 +139,8 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 				s.ChannelFileSendWithMessage(m.ChannelID, "Ye Le Bro", m.Author.Username+".pdf", file)
 
 				// Clean all temp directories
-				err = os.RemoveAll(session.UserID)
-				if err != nil {
-					log.Println("Error Removing temp directory: ", err)
+				if Err = os.RemoveAll(session.UserID); Err != nil {
+					log.Println("Error Removing temp directory: ", Err)
 					return
 				}
 
@@ -156,7 +150,13 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 				db.Save(&session)
 			} else {
 				// User exist + Active session + 0 images sent
-				s.ChannelMessageSend(m.ChannelID, "Error: no images found\nSend some images first")
+				s.ChannelMessageSend(m.ChannelID, "Okay your session has been ended\nSend soja.start to initiate a new session again")
+				session.RState = false
+				db.Save(&session)
+				if Err = os.Remove(session.UserID); Err != nil {
+					log.Println("Error Removing temp directory: ", Err)
+					return
+				}
 			}
 		} else {
 			// User exist + inactive session

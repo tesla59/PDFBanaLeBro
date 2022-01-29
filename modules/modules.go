@@ -7,6 +7,7 @@ import (
 )
 
 var PreCommand string = "soja."
+var Err error
 
 func isImage(filePath string) bool {
 	file, err := os.Open(filePath)
@@ -21,7 +22,7 @@ func isImage(filePath string) bool {
 	}
 
 	fileType := http.DetectContentType(buf)
-	if fileType == "image/png" || fileType == "image/jpeg" {
+	if fileType == "image/png" || fileType == "image/jpeg" || fileType == "image/webp" {
 		return true
 	} else {
 		return false
