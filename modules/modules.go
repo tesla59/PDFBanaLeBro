@@ -7,6 +7,7 @@ import (
 )
 
 var PreCommand string = "soja."
+var Err error
 
 func isImage(filePath string) bool {
 	file, err := os.Open(filePath)
