@@ -157,9 +157,14 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 				db.Save(&session)
 			} else {
 				// User exist + Active session + 0 images sent
-				session.RState = false
 				s.ChannelMessageSend(m.ChannelID, "Okay your session has been ended\nSend soja.start to initiate a new session again")
+				session.RState = false
 				db.Save(&session)
+				err := os.Remove(session.UserID)
+				if err != nil {
+					log.Println("Error Removing temp directory: ", err)
+					return
+				}
 			}
 		} else {
 			// User exist + inactive session
