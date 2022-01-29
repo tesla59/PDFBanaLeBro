@@ -4,7 +4,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func Start(s *discordgo.Session, m *discordgo.MessageCreate) {
+func Help(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// Ignore all messages created by the bot itself
 	if m.Author.ID == s.State.User.ID {

@@ -37,7 +37,7 @@ func main() {
 
 	// Register the messageCreate func as a callback for MessageCreate events.
 	discord.AddHandler(modules.PingCreate)
-	discord.AddHandler(modules.Start)
+	discord.AddHandler(modules.Help)
 	discord.AddHandler(modules.PDF)
 
 	// Debug handler: only enable in debug mode
