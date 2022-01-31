@@ -4,10 +4,14 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 var PreCommand string = "soja."
 var Err error
+var DB *gorm.DB
 
 func isImage(filePath string) bool {
 	file, err := os.Open(filePath)
@@ -27,4 +31,14 @@ func isImage(filePath string) bool {
 	} else {
 		return false
 	}
+}
+
+func ConnectDB() error {
+	var db *gorm.DB
+	db, Err = gorm.Open(sqlite.Open("session.db"), &gorm.Config{})
+	if Err != nil {
+		return Err
+	}
+	DB = db
+	return nil
 }

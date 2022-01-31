@@ -35,6 +35,12 @@ func main() {
 		return
 	}
 
+	// Connect to DB
+	err = modules.ConnectDB()
+	if err != nil {
+		log.Fatal("Connection to database failed,", err)
+	}
+
 	// Register the messageCreate func as a callback for MessageCreate events.
 	discord.AddHandler(modules.PingCreate)
 	discord.AddHandler(modules.Help)
