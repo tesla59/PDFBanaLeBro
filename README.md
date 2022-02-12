@@ -3,6 +3,7 @@
 [![Add Me](https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/api/oauth2/authorize?client_id=933041693970800691&permissions=8&scope=bot)
 
 PDFBanaLeBro is a discord bot using for PDF utility.
+LAMMA GAMMA WAS HERE .
 This bot was made because some professors were too lazy to send PDF notes
 
 The purpose of this bot is to convert sent images to PDF and send them to discord chat.
