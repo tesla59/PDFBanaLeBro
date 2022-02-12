@@ -126,7 +126,7 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 				s.ChannelFileSendWithMessage(m.ChannelID, "Ye Le Bro", m.Author.Username+".pdf", file)
 
 				// Clean all temp directories
-				if Err = os.RemoveAll("temp"); Err != nil {
+				if Err = os.RemoveAll("temp/" + session.UserID); Err != nil {
 					log.Println("Error Removing temp directory: ", Err)
 					return
 				}
@@ -140,7 +140,7 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 				s.ChannelMessageSend(m.ChannelID, "Okay your session has been ended\nSend soja.start to initiate a new session again")
 				session.RState = false
 				DB.Save(&session)
-				if Err = os.RemoveAll("temp"); Err != nil {
+				if Err = os.RemoveAll("temp/" + session.UserID); Err != nil {
 					log.Println("Error Removing temp directory: ", Err)
 					return
 				}
