@@ -55,22 +55,22 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 		// Fetch user's data from DB
 		if (DB.Where(&Session{UserID: m.Author.ID}).First(&session)).Error != nil {
 			// User not in DB
-			s.ChannelMessageSend(m.ChannelID, "I dont even know who u are\nSend soja.start to send me your bank details")
+			s.ChannelMessageSend(m.ChannelID, "I dont even know who u are\nSend "+PreCommand+"start to send me your bank details")
 			return
 		}
 		// User not in DB
 		if !session.RState {
 			// User in DB + RState False
-			s.ChannelMessageSend(m.ChannelID, "You dont have an active session\nSend soja.start to enable a session")
+			s.ChannelMessageSend(m.ChannelID, "You dont have an active session\nSend "+PreCommand+"start to enable a session")
 			return
 		}
 		// User in DB + RState True
 		if len(m.Attachments) == 0 {
-			// soja.f without attachments
+			// "+PreCommand+".f without attachments
 			s.ChannelMessageSend(m.ChannelID, "Error: no file sent")
 			return
 		}
-		// soja.f with attachment
+		// "+PreCommand+".f with attachment
 		for i := range m.Attachments {
 			filePath := "temp/" + session.UserID + "/temp.jpeg"
 			if Err = dload.DownloadFile(m.Attachments[i].ProxyURL, filePath); Err != nil {
@@ -107,18 +107,18 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 		// Fetch user's data from DB
 		if (DB.Where(&Session{UserID: m.Author.ID}).First(&session)).Error != nil {
 			// User doesn't exist/New User
-			s.ChannelMessageSend(m.ChannelID, "I dont even know who u are\nSend soja.start to send me your bank details")
+			s.ChannelMessageSend(m.ChannelID, "I dont even know who u are\nSend "+PreCommand+"start to send me your bank details")
 			return
 		}
 		if !session.RState {
 			// User exist + inactive session
-			s.ChannelMessageSend(m.ChannelID, "You don't have any active session\nSend soja.start to initiate a session")
+			s.ChannelMessageSend(m.ChannelID, "You don't have any active session\nSend "+PreCommand+"start to initiate a session")
 			return
 		}
 		// User exist + Has an active session
 		if session.CurrentImages == 0 {
 			// User exist + Active session + 0 images sent
-			s.ChannelMessageSend(m.ChannelID, "Okay your session has been ended\nSend soja.start to initiate a new session again")
+			s.ChannelMessageSend(m.ChannelID, "Okay your session has been ended\nSend "+PreCommand+"start to initiate a new session again")
 			session.RState = false
 			DB.Save(&session)
 			if Err = os.RemoveAll("temp/" + session.UserID); Err != nil {
