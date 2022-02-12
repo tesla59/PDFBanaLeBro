@@ -44,8 +44,10 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 			// Already active session
 			s.ChannelMessageSend(m.ChannelID, "Hold up, you already have an active session\nSend images instead")
 		}
-		// Store all temp files in usersID/userID_i.png
-		os.Mkdir(session.UserID, 0777)
+		// Store all temp files in temp/usersID/userID_i.png
+		if Err = os.MkdirAll("temp/"+session.UserID, 0777); Err != nil {
+			log.Println("Cannot create directory", Err)
+		}
 	}
 
 	// Fetch images command
@@ -70,7 +72,7 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		// soja.f with attachment
 		for i := range m.Attachments {
-			filePath := session.UserID + "/" + "temp.jpeg"
+			filePath := "temp/" + session.UserID + "/temp.jpeg"
 			if Err = dload.DownloadFile(m.Attachments[i].ProxyURL, filePath); Err != nil {
 				log.Println("Error downloading file: ", Err)
 				return
@@ -78,7 +80,7 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 			if !isImage(filePath) {
 				// Unsupported filetype
 				s.ChannelMessageSend(m.ChannelID, "Error: This file format is not supported")
-				os.Remove(filePath)
+				os.RemoveAll(filePath)
 				return
 			}
 			// File is Image
@@ -88,13 +90,13 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 			}
 			// Creating a new PDF/Appending to existing one
 			imp, _ := api.Import("form:A3, pos:c, s:1.0", pdfcpu.POINTS)
-			filePDF := session.UserID + "/" + m.Author.Username + ".pdf"
+			filePDF := "temp/" + session.UserID + "/" + m.Author.Username + ".pdf"
 			Err = api.ImportImagesFile([]string{filePath}, filePDF, imp, nil)
 			if Err != nil {
 				log.Println("Error Creating output PDF: ", Err)
 				return
 			}
-			os.Remove(filePath)
+			os.RemoveAll(filePath)
 			session.CurrentImages++
 			DB.Save(&session)
 		}
@@ -110,7 +112,7 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 			// User exist + Has an active session
 			if session.CurrentImages != 0 {
 				// Has at least 1 image to convert
-				filePDF := session.UserID + "/" + m.Author.Username + ".pdf"
+				filePDF := "temp/" + session.UserID + "/" + m.Author.Username + ".pdf"
 
 				// Create *FILE for output.pdf
 				file, Err := os.Open(filePDF)
@@ -124,7 +126,7 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 				s.ChannelFileSendWithMessage(m.ChannelID, "Ye Le Bro", m.Author.Username+".pdf", file)
 
 				// Clean all temp directories
-				if Err = os.RemoveAll(session.UserID); Err != nil {
+				if Err = os.RemoveAll("temp"); Err != nil {
 					log.Println("Error Removing temp directory: ", Err)
 					return
 				}
@@ -138,7 +140,7 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 				s.ChannelMessageSend(m.ChannelID, "Okay your session has been ended\nSend soja.start to initiate a new session again")
 				session.RState = false
 				DB.Save(&session)
-				if Err = os.Remove(session.UserID); Err != nil {
+				if Err = os.RemoveAll("temp"); Err != nil {
 					log.Println("Error Removing temp directory: ", Err)
 					return
 				}
