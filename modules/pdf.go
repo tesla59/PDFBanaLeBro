@@ -108,46 +108,46 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if (DB.Where(&Session{UserID: m.Author.ID}).First(&session)).Error != nil {
 			// User doesn't exist/New User
 			s.ChannelMessageSend(m.ChannelID, "I dont even know who u are\nSend soja.start to send me your bank details")
-		} else if session.RState {
-			// User exist + Has an active session
-			if session.CurrentImages != 0 {
-				// Has at least 1 image to convert
-				filePDF := "temp/" + session.UserID + "/" + m.Author.Username + ".pdf"
-
-				// Create *FILE for output.pdf
-				file, Err := os.Open(filePDF)
-				if Err != nil {
-					log.Println("Error Reading output PDF: ", Err)
-					return
-				}
-				defer file.Close()
-
-				// Send the final PDF
-				s.ChannelFileSendWithMessage(m.ChannelID, "Ye Le Bro", m.Author.Username+".pdf", file)
-
-				// Clean all temp directories
-				if Err = os.RemoveAll("temp/" + session.UserID); Err != nil {
-					log.Println("Error Removing temp directory: ", Err)
-					return
-				}
-
-				// Reset all DB entries except userID
-				session.RState = false
-				session.CurrentImages = 0
-				DB.Save(&session)
-			} else {
-				// User exist + Active session + 0 images sent
-				s.ChannelMessageSend(m.ChannelID, "Okay your session has been ended\nSend soja.start to initiate a new session again")
-				session.RState = false
-				DB.Save(&session)
-				if Err = os.RemoveAll("temp/" + session.UserID); Err != nil {
-					log.Println("Error Removing temp directory: ", Err)
-					return
-				}
-			}
-		} else {
+			return
+		}
+		if !session.RState {
 			// User exist + inactive session
 			s.ChannelMessageSend(m.ChannelID, "You don't have any active session\nSend soja.start to initiate a session")
+			return
 		}
+		// User exist + Has an active session
+		if session.CurrentImages == 0 {
+			// User exist + Active session + 0 images sent
+			s.ChannelMessageSend(m.ChannelID, "Okay your session has been ended\nSend soja.start to initiate a new session again")
+			session.RState = false
+			DB.Save(&session)
+			if Err = os.RemoveAll("temp/" + session.UserID); Err != nil {
+				log.Println("Error Removing temp directory: ", Err)
+				return
+			}
+		}
+		// Has at least 1 image to convert
+		filePDF := "temp/" + session.UserID + "/" + m.Author.Username + ".pdf"
+		// Create *FILE for output.pdf
+		file, Err := os.Open(filePDF)
+		if Err != nil {
+			log.Println("Error Reading output PDF: ", Err)
+			return
+		}
+		defer file.Close()
+
+		// Send the final PDF
+		s.ChannelFileSendWithMessage(m.ChannelID, "Ye Le Bro", m.Author.Username+".pdf", file)
+
+		// Clean all temp directories
+		if Err = os.RemoveAll("temp/" + session.UserID); Err != nil {
+			log.Println("Error Removing temp directory: ", Err)
+			return
+		}
+
+		// Reset all DB entries except userID
+		session.RState = false
+		session.CurrentImages = 0
+		DB.Save(&session)
 	}
 }
