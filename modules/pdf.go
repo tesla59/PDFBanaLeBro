@@ -136,8 +136,19 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		defer file.Close()
 
-		// Send the final PDF
-		s.ChannelFileSendWithMessage(m.ChannelID, "Ye Le Bro", m.Author.Username+".pdf", file)
+		stats, Err := file.Stat()
+		if Err != nil {
+			log.Println("Error Reading output PDF: ", Err)
+			return
+		}
+
+		if stats.Size() > 8388608 {
+			// 8mB is the size limit. POG Discord
+			s.ChannelMessageSend(m.ChannelID, "You're file exceed Discord's file size limit of 8mB. Try recreating PDF with less images")
+		} else {
+			// Send the final PDF
+			s.ChannelFileSendWithMessage(m.ChannelID, "Ye Le Bro", m.Author.Username+".pdf", file)
+		}
 
 		// Clean all temp directories
 		if Err = os.RemoveAll("temp/" + session.UserID); Err != nil {
