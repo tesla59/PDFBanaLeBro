@@ -1,6 +1,8 @@
 package modules
 
 import (
+	"strings"
+
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -11,7 +13,7 @@ func Help(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	if m.Content == PreCommand+"help" {
+	if strings.ToLower(m.Content) == PreCommand+"help" {
 		startMessage := "Hey there. I'm a PDF utility bot written in Golang by @tesla59.\nI'm still in my initial phase so don't expect much."
 		s.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
 			Description: startMessage,

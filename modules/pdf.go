@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/pdfcpu/pdfcpu/pkg/api"
@@ -23,7 +24,7 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 	DB.AutoMigrate(&Session{})
 
 	// Start command
-	if m.Content == PreCommand+"start" {
+	if strings.ToLower(m.Content) == PreCommand+"start" {
 
 		// Fetch user's data from DB
 		if (DB.Where(&Session{UserID: m.Author.ID}).First(&session)).Error != nil {
@@ -52,7 +53,7 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	// Fetch images command
-	if m.Content == PreCommand+"f" {
+	if strings.ToLower(m.Content) == PreCommand+"f" {
 		// Fetch user's data from DB
 		if (DB.Where(&Session{UserID: m.Author.ID}).First(&session)).Error != nil {
 			// User not in DB
@@ -104,7 +105,7 @@ func PDF(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	// End command
-	if m.Content == PreCommand+"end" {
+	if strings.ToLower(m.Content) == PreCommand+"end" {
 		// Fetch user's data from DB
 		if (DB.Where(&Session{UserID: m.Author.ID}).First(&session)).Error != nil {
 			// User doesn't exist/New User

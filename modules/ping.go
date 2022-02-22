@@ -2,6 +2,7 @@ package modules
 
 import (
 	"log"
+	"strings"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/go-ping/ping"
@@ -15,7 +16,7 @@ func PingCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	// '/ping' command starts here
-	if m.Content == PreCommand+"ping" {
+	if strings.ToLower(m.Content) == PreCommand+"ping" {
 		// Respond to the command (Edit later)
 		message, err := s.ChannelMessageSend(m.ChannelID, "Pinging.........")
 		if err != nil {
